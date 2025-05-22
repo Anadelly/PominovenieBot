@@ -6,6 +6,7 @@ from telegram.ext import ContextTypes
 from docx import Document
 from docx.shared import Pt
 
+# === Кнопка /start ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("О здравии", callback_data='ozdravii')],
@@ -15,6 +16,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Выберите действие:", reply_markup=reply_markup)
 
+# === Кнопки меню ===
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -28,6 +30,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 caption="📷 Отсканируйте QR-код в приложении банка и введите сумму перевода.\n\n💖 Спасибо за помощь!"
             )
 
+# === Приём сообщений с именами ===
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     note_type = context.user_data.get('type')
     if note_type:
@@ -35,9 +38,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         names = [name.strip() for name in names if name.strip()]
         if names:
             now = datetime.now().strftime("%d%m%Y")
-            filename = f\"{'о_здравии' if note_type == 'ozdravii' else 'о_упокоении'}_{now}.docx\"
-            filepath = os.path.join(\"zapiski\", filename)
-            os.makedirs(\"zapiski\", exist_ok=True)
+            filename = f"{'о_здравии' if note_type == 'ozdravii' else 'о_упокоении'}_{now}.docx"
+            filepath = os.path.join("zapiski", filename)
+            os.makedirs("zapiski", exist_ok=True)
             doc = Document()
             table = doc.add_table(rows=1, cols=3)
             cells = table.rows[0].cells
@@ -46,7 +49,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 run = paragraph.add_run(names[i])
                 run.font.size = Pt(14)
             doc.save(filepath)
-            await update.message.reply_text(\"Записка сохранена. 🙏\")
+            await update.message.reply_text("Записка сохранена. 🙏")
         else:
-            await update.message.reply_text(\"Не удалось распознать имена. Попробуйте снова.\")
+            await update.message.reply_text("Не удалось распознать имена. Попробуйте снова.")
         context.user_data['type'] = None
+
+# === Ручная выгрузка файлов (Только для админа) ===
+async def export_notes(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    admin_ids = [int(i.strip()) for i in os.getenv("ADMIN_IDS", "").split(",") if i.strip()]
+    
+    if user_id not in admin_ids:
+        await update.message.reply_text("⛔ У вас нет доступа к этой команде.")
+        return
+
+    folder = "zapiski"
+    if not os.path.exists(folder):
+        await update.message.reply_text("Папка с записками пока пуста.")
+        return
+
+    files = [f for f in os.listdir(folder) if f.endswith(".docx")]
+    if not files:
+        await update.message.reply_text("Нет новых записок.")
+        return
+
+    for file in files:
+        with open(os.path.join(folder, file), "rb") as doc:
+            await update.message.reply_document(document=doc, filename=file)
