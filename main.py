@@ -1,13 +1,23 @@
 import os
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
-from docx import Document
-from datetime import datetime
 import re
+from datetime import datetime
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    MessageHandler,
+    CallbackQueryHandler,
+    ContextTypes,
+    filters
+)
+from docx import Document
+from docx.shared import Pt
 
+# Конфигурация из переменных окружения
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_IDS = [int(id.strip()) for id in os.getenv("ADMIN_IDS", "").split(",") if id.strip()]
-TIMEZONE = os.getenv("TIMEZONE", "Europe/Moscow")
+ADMIN_IDS = [int(i.strip()) for i in os.getenv("ADMIN_IDS", "").split(",") if i.strip()]
+
+# === Команды и обработчики ===
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -21,37 +31,54 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
     if query.data in ['ozdravii', 'oupokoenii']:
         context.user_data['type'] = query.data
-        await query.message.reply_text("Пожалуйста, введите имена:")
+        await query.message.reply_text("Пожалуйста, введите имена в формате:\n\nболящей Марии, младенца Сергия, воина Александра")
+    
     elif query.data == 'donate':
-        await query.message.reply_photo(photo=open('static/qr_code.png', 'rb'),
-                                        caption="Отсканируйте QR-код в приложении банка и введите сумму пожертвования.")
+        with open('static/qr-code.jpg', 'rb') as qr:
+            await query.message.reply_photo(
+                photo=qr,
+                caption="📷 Отсканируйте QR-код в приложении банка и введите сумму перевода.\n\n💖 Спасибо за помощь!"
+            )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     note_type = context.user_data.get('type')
     if note_type:
-        names = re.findall(r'\b[А-Яа-яёЁ]+\b', update.message.text)
+        names = re.findall(r'[А-Яа-яёЁ ]+', update.message.text)
+        names = [name.strip() for name in names if name.strip()]
+
         if names:
-            filename = f"{'о_здравии' if note_type == 'ozdravii' else 'о_упокоении'}_{datetime.now().strftime('%d%m%Y')}.docx"
+            now = datetime.now().strftime("%d%m%Y")
+            filename = f"{'о_здравии' if note_type == 'ozdravii' else 'о_упокоении'}_{now}.docx"
+            filepath = os.path.join("zapiski", filename)
+
+            os.makedirs("zapiski", exist_ok=True)
             doc = Document()
             table = doc.add_table(rows=1, cols=3)
-            row_cells = table.rows[0].cells
-            for i in range(3):
-                if i < len(names):
-                    row_cells[i].text = names[i]
-            doc.save(filename)
-            await update.message.reply_text("Записка сохранена.")
+            cells = table.rows[0].cells
+
+            for i in range(min(3, len(names))):
+                paragraph = cells[i].paragraphs[0]
+                run = paragraph.add_run(names[i])
+                run.font.size = Pt(14)
+
+            doc.save(filepath)
+            await update.message.reply_text("Записка сохранена. 🙏")
         else:
-            await update.message.reply_text("Не удалось распознать имена. Пожалуйста, попробуйте снова.")
+            await update.message.reply_text("Не удалось распознать имена. Попробуйте снова.")
+        
         context.user_data['type'] = None
 
+# === Запуск бота ===
+
 def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(button))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.run_polling()
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CallbackQueryHandler(button))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    application.run_polling()
 
 if __name__ == '__main__':
     main()
