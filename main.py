@@ -21,7 +21,7 @@ application = Application.builder().token(BOT_TOKEN).build()
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(button))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-application.add_handler(CommandHandler("выгрузить", export_notes))
+application.add_handler(CommandHandler("export", export_notes))
 
 @app.route(f"/{BOT_TOKEN}", methods=["POST"])
 def webhook():
