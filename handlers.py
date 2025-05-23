@@ -6,7 +6,6 @@ from telegram.ext import ContextTypes
 from docx import Document
 from docx.shared import Pt
 
-# === Кнопка /start ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("О здравии", callback_data='ozdravii')],
@@ -16,21 +15,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Выберите действие:", reply_markup=reply_markup)
 
-# === Кнопки меню ===
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     if query.data in ['ozdravii', 'oupokoenii']:
         context.user_data['type'] = query.data
-        await query.message.reply_text("Пожалуйста, введите имена в формате:\n\nболящей Марии, младенца Сергия")
+        await query.message.reply_text("Пожалуйста, введите имена в формате:
+
+болящей Марии, младенца Сергия")
     elif query.data == 'donate':
         with open('static/qr-code.jpg', 'rb') as qr:
             await query.message.reply_photo(
                 photo=qr,
-                caption="📷 Отсканируйте QR-код в приложении банка и введите сумму перевода.\n\n💖 Спасибо за помощь!"
+                caption="📷 Отсканируйте QR-код в приложении банка и введите сумму перевода. Спасибо!"
             )
 
-# === Приём сообщений с именами ===
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     note_type = context.user_data.get('type')
     if note_type:
@@ -54,25 +53,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Не удалось распознать имена. Попробуйте снова.")
         context.user_data['type'] = None
 
-# === Ручная выгрузка файлов (Только для админа) ===
 async def export_notes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     admin_ids = [int(i.strip()) for i in os.getenv("ADMIN_IDS", "").split(",") if i.strip()]
-    
     if user_id not in admin_ids:
         await update.message.reply_text("⛔ У вас нет доступа к этой команде.")
         return
-
     folder = "zapiski"
     if not os.path.exists(folder):
         await update.message.reply_text("Папка с записками пока пуста.")
         return
-
     files = [f for f in os.listdir(folder) if f.endswith(".docx")]
     if not files:
         await update.message.reply_text("Нет новых записок.")
         return
-
     for file in files:
         with open(os.path.join(folder, file), "rb") as doc:
             await update.message.reply_document(document=doc, filename=file)
