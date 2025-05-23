@@ -2,6 +2,10 @@
 # Использует PTB встроенный webhook-сервер, корректно работает на Render
 
 import os
+import logging  # ✅ логирование для отладки
+
+# Включаем базовое логирование
+logging.basicConfig(level=logging.INFO)
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
     MessageHandler, filters
