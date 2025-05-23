@@ -70,4 +70,3 @@ async def export_notes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for file in files:
         with open(os.path.join(folder, file), "rb") as doc:
             await update.message.reply_document(document=doc, filename=file)
-
