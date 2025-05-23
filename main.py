@@ -24,7 +24,7 @@ application.add_handler(CommandHandler("export", export_notes))
 @app.route(f"/{BOT_TOKEN}", methods=["POST"])
 def webhook():
     update = Update.de_json(request.get_json(force=True), application.bot)
-    asyncio.create_task(application.update_queue.put(update))
+    application.process_update(update)  # ✅ безопасный синхронный вызов
     return "OK"
 
 @app.route("/")
