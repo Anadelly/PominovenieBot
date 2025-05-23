@@ -22,8 +22,11 @@ application.add_handler(CommandHandler("export", export_notes))
 @app.route(f"/{BOT_TOKEN}", methods=["POST"])
 def webhook():
     update = Update.de_json(request.get_json(force=True), application.bot)
-    application.process_update(update)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(application.process_update(update))
     return "OK"
+
 
 @app.route("/")
 def root():
