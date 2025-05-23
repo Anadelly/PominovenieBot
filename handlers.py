@@ -28,7 +28,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.info(f"BUTTON clicked: data={query.data}")
     if query.data in ["ozdravii", "oupokoenii"]:
         context.user_data["type"] = query.data
-        await query.message.reply_text("Пожалуйста, введите имена в формате: болящей Марии, младенца Сергия")
+        await query.message.reply_text("Пожалуйста, введите имена в формате: Марии, Сергия")
     elif query.data == "donate":
         with open("static/qr-code.jpg", "rb") as qr:
             await query.message.reply_photo(
