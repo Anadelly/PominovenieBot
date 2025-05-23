@@ -1,5 +1,6 @@
 import re
 import os
+import logging
 from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
@@ -7,28 +8,35 @@ from docx import Document
 from docx.shared import Pt
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logging.info(f"START called: message={bool(update.message)}, callback={bool(update.callback_query)}")
+
     keyboard = [
         [InlineKeyboardButton("О здравии", callback_data="ozdravii")],
         [InlineKeyboardButton("Об упокоении", callback_data="oupokoenii")],
         [InlineKeyboardButton("Пожертвовать", callback_data="donate")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Выберите действие:", reply_markup=reply_markup)
+
+    if update.message:
+        await update.message.reply_text("Выберите действие:", reply_markup=reply_markup)
+    elif update.callback_query:
+        await update.callback_query.message.reply_text("Выберите действие:", reply_markup=reply_markup)
 
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+    logging.info(f"BUTTON clicked: data={query.data}")
     if query.data in ["ozdravii", "oupokoenii"]:
         context.user_data["type"] = query.data
-        await query.message.reply_text(
-            "Пожалуйста, введите имена в формате: болящей Марии, младенца Сергия"
-        )
+        await query.message.reply_text("Пожалуйста, введите имена в формате: болящей Марии, младенца Сергия")
     elif query.data == "donate":
         with open("static/qr-code.jpg", "rb") as qr:
             await query.message.reply_photo(
                 photo=qr,
                 caption="📷 Отсканируйте QR-код и введите сумму в приложении банка. Спасибо!"
             )
+
+# остальная часть handle_message и export_notes — без изменений
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     note_type = context.user_data.get("type")
