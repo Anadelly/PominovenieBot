@@ -1,4 +1,3 @@
-# === Файл: main.py ===
 import os
 import re
 import asyncio
@@ -17,7 +16,6 @@ ADMIN_IDS = [int(i.strip()) for i in os.getenv("ADMIN_IDS", "").split(",") if i.
 app = Flask(__name__)
 application = Application.builder().token(BOT_TOKEN).build()
 
-# Подключаем обработчики
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(button))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -26,7 +24,7 @@ application.add_handler(CommandHandler("export", export_notes))
 @app.route(f"/{BOT_TOKEN}", methods=["POST"])
 def webhook():
     update = Update.de_json(request.get_json(force=True), application.bot)
-    application.update_queue.put(update)
+    asyncio.create_task(application.update_queue.put(update))
     return "OK"
 
 @app.route("/")
