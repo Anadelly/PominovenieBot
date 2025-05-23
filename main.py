@@ -9,7 +9,7 @@ from handlers import start, button, handle_message, export_notes
 logging.basicConfig(level=logging.INFO)
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Пример: https://pominoveniebot.onrender.com
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # https://pominoveniebot.onrender.com
 PORT = int(os.environ.get("PORT", 10000))
 
 application = Application.builder().token(BOT_TOKEN).build()
