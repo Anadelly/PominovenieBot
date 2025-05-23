@@ -8,9 +8,9 @@ from docx.shared import Pt
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
-        [InlineKeyboardButton("О здравии", callback_data='ozdravii')],
-        [InlineKeyboardButton("Об упокоении", callback_data='oupokoenii')],
-        [InlineKeyboardButton("Пожертвовать", callback_data='donate')]
+        [InlineKeyboardButton("О здравии", callback_data="ozdravii")],
+        [InlineKeyboardButton("Об упокоении", callback_data="oupokoenii")],
+        [InlineKeyboardButton("Пожертвовать", callback_data="donate")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Выберите действие:", reply_markup=reply_markup)
@@ -18,28 +18,28 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    if query.data in ['ozdravii', 'oupokoenii']:
-        context.user_data['type'] = query.data
+    if query.data in ["ozdravii", "oupokoenii"]:
+        context.user_data["type"] = query.data
         await query.message.reply_text(
             "Пожалуйста, введите имена в формате: болящей Марии, младенца Сергия"
         )
-    elif query.data == 'donate':
-        with open('static/qr-code.jpg', 'rb') as qr:
+    elif query.data == "donate":
+        with open("static/qr-code.jpg", "rb") as qr:
             await query.message.reply_photo(
                 photo=qr,
-                caption="📷 Отсканируйте QR-код в приложении банка и введите сумму перевода. Спасибо!"
+                caption="📷 Отсканируйте QR-код и введите сумму в приложении банка. Спасибо!"
             )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    note_type = context.user_data.get('type')
+    note_type = context.user_data.get("type")
     if note_type:
-        names = re.findall(r'[А-Яа-яёЁ ]+', update.message.text)
+        names = re.findall(r"[А-Яа-яёЁ ]+", update.message.text)
         names = [name.strip() for name in names if name.strip()]
         if names:
             now = datetime.now().strftime("%d%m%Y")
             filename = f"{'о_здравии' if note_type == 'ozdravii' else 'о_упокоении'}_{now}.docx"
-            filepath = os.path.join("zapiski", filename)
             os.makedirs("zapiski", exist_ok=True)
+            filepath = os.path.join("zapiski", filename)
             doc = Document()
             table = doc.add_table(rows=1, cols=3)
             cells = table.rows[0].cells
@@ -51,7 +51,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Записка сохранена. 🙏")
         else:
             await update.message.reply_text("Не удалось распознать имена. Попробуйте снова.")
-        context.user_data['type'] = None
+        context.user_data["type"] = None
 
 async def export_notes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -61,7 +61,7 @@ async def export_notes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     folder = "zapiski"
     if not os.path.exists(folder):
-        await update.message.reply_text("Папка с записками пока пуста.")
+        await update.message.reply_text("Папка с записками пуста.")
         return
     files = [f for f in os.listdir(folder) if f.endswith(".docx")]
     if not files:
@@ -70,3 +70,4 @@ async def export_notes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for file in files:
         with open(os.path.join(folder, file), "rb") as doc:
             await update.message.reply_document(document=doc, filename=file)
+
