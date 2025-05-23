@@ -33,7 +33,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         with open("static/qr-code.jpg", "rb") as qr:
             await query.message.reply_photo(
                 photo=qr,
-                caption="📷 Отсканируйте QR-код и введите сумму в приложении банка. Спасибо!"
+                caption="📷 Отсканируйте QR-код и введите сумму в приложении банка по ссылке https://qr.nspk.ru/BS2A003TTV82T23F844A34OJIMUM20JS?type=01&bank=100000000005&crc=7FF6 Спасибо!"
             )
 
 # остальная часть handle_message и export_notes — без изменений
