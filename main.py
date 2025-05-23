@@ -22,6 +22,7 @@ application.add_handler(CommandHandler("export", export_notes))
 application.run_webhook(
     listen="0.0.0.0",
     port=PORT,
-    webhook_url=f"{WEBHOOK_URL}/{BOT_TOKEN}",
-    webhook_path=f"/{BOT_TOKEN}"  # ✅ Критическая строка, которая нужна
+    url_path=BOT_TOKEN,  # 👈 именно так — для PTB 20.0
+    webhook_url=f"{WEBHOOK_URL}/{BOT_TOKEN}"
 )
+
