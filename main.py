@@ -1,11 +1,9 @@
 import os
-import re
-import asyncio
 from flask import Flask, request
 from telegram import Update
 from telegram.ext import (
-    Application, CallbackQueryHandler, CommandHandler,
-    ContextTypes, MessageHandler, filters
+    Application, CommandHandler, CallbackQueryHandler,
+    MessageHandler, ContextTypes, filters
 )
 from handlers import start, button, handle_message, export_notes
 
@@ -24,18 +22,18 @@ application.add_handler(CommandHandler("export", export_notes))
 @app.route(f"/{BOT_TOKEN}", methods=["POST"])
 def webhook():
     update = Update.de_json(request.get_json(force=True), application.bot)
-    application.process_update(update)  # ✅ безопасный синхронный вызов
+    application.process_update(update)
     return "OK"
 
 @app.route("/")
-def index():
-    return "Бот запущен (WEBHOOK)"
+def root():
+    return "Bot is running."
 
 if __name__ == "__main__":
-    async def run():
-        await application.bot.set_webhook(url=f"{WEBHOOK_URL}/{BOT_TOKEN}")
+    import asyncio
+    async def setup():
+        await application.bot.set_webhook(f"{WEBHOOK_URL}/{BOT_TOKEN}")
         await application.initialize()
         await application.start()
-        app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
-
-    asyncio.run(run())
+    asyncio.run(setup())
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
