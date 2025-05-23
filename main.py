@@ -1,4 +1,5 @@
 import os
+import asyncio
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
     MessageHandler, filters
@@ -7,7 +8,7 @@ from handlers import start, button, handle_message, export_notes
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_IDS = [int(i.strip()) for i in os.getenv("ADMIN_IDS", "").split(",") if i.strip()]
-WEBHOOK_HOST = os.getenv("WEBHOOK_URL")  # https://your-app.onrender.com
+WEBHOOK_HOST = os.getenv("WEBHOOK_URL")  # Пример: https://your-bot.onrender.com
 PORT = int(os.environ.get("PORT", 10000))
 
 async def main():
@@ -21,9 +22,8 @@ async def main():
     await application.run_webhook(
         listen="0.0.0.0",
         port=PORT,
-        webhook_url=f"{WEBHOOK_HOST}/{BOT_TOKEN}"
+        webhook_url=f"{WEBHOOK_HOST}/{BOT_TOKEN}",
     )
 
 if __name__ == "__main__":
-    import asyncio
     asyncio.run(main())
