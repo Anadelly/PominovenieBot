@@ -13,7 +13,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("О здравии", callback_data="ozdravii")],
         [InlineKeyboardButton("Об упокоении", callback_data="oupokoenii")],
-        [InlineKeyboardButton("Пожертвовать", callback_data="donate")]
+        [InlineKeyboardButton("Помощь храму", callback_data="donate")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
