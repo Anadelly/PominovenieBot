@@ -1,2 +1,3 @@
-python-telegram-bot==20.0
+# Обновлённый requirements.txt с поддержкой Webhook-сервера PTB
+python-telegram-bot[webhooks]==20.0
 python-docx
