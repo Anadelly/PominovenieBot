@@ -3,4 +3,5 @@ python-docx
 yadisk
 APScheduler==3.10.1
 aiohttp
+requests
 
