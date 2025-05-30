@@ -7,6 +7,7 @@ from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
     MessageHandler, filters
 )
+from telegram import Update
 from handlers import start, button, handle_message, export_notes
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -59,7 +60,7 @@ async def handle_root(request):
 async def handle_webhook(request):
     try:
         data = await request.json()
-        update = application.bot._extract_update(data)
+        update = Update.de_json(data, application.bot)
         await application.process_update(update)
     except Exception as e:
         logging.exception("Ошибка в вебхуке")
