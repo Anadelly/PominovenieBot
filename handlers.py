@@ -102,3 +102,26 @@ async def export_notes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("✅ Записки выгружены, скопированы на Яндекс.Диск и обнулены.")
     else:
         await update.message.reply_text("⚠ Папка с записками пуста.")
+
+
+from utils.yadisk_utils import upload_docx_to_yadisk
+from datetime import datetime
+import os
+import shutil
+
+async def upload_yadisk_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    ADMIN_IDS = list(map(int, os.environ.get("ADMIN_IDS", "").split(",")))
+    if update.effective_user.id not in ADMIN_IDS:
+        return
+    filename = f"zapiski_{datetime.now().strftime('%Y-%m-%d')}.docx"
+    file_path = os.path.join(".", filename)
+    if not os.path.exists(file_path):
+        await update.message.reply_text("Файл не найден для загрузки.")
+        return
+    archived_path = os.path.join(".", f"арх_{filename}")
+    shutil.move(file_path, archived_path)
+    success = upload_docx_to_yadisk(archived_path)
+    if success:
+        await update.message.reply_text("Файл успешно загружен на Яндекс.Диск.")
+    else:
+        await update.message.reply_text("Ошибка при загрузке на Яндекс.Диск.")
