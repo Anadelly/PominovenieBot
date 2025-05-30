@@ -23,12 +23,11 @@ application.add_handler(CallbackQueryHandler(button))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 application.add_handler(CommandHandler("export", export_notes))
 
-# Планировщик
 def scheduled_export():
     from types import SimpleNamespace
 
     class DummyMessage:
-        def init(self, user_id):
+        def __init__(self, user_id):
             self.chat = self
             self.id = user_id
             self.from_user = SimpleNamespace(id=user_id)
@@ -46,7 +45,6 @@ scheduler = BackgroundScheduler(timezone="Europe/Moscow")
 scheduler.add_job(scheduled_export, "cron", hour=20, minute=0)
 scheduler.start()
 
-# 🔁 Заглушка для Render + UptimeRobot
 async def handle_root(request):
     return web.Response(text="✅ Bot is alive", status=200)
 
@@ -59,7 +57,6 @@ async def handle_webhook(request):
         logging.error(f"Webhook error: {e}")
     return web.Response()
 
-# 🚀 Запуск aiohttp-сервера
 async def main():
     await application.initialize()
     await application.bot.set_webhook(url=f"{WEBHOOK_URL}/{BOT_TOKEN}")
@@ -67,7 +64,7 @@ async def main():
 
     app = web.Application()
     app.router.add_get("/", handle_root)
-    app.router.add_head("/", handle_root)  # <--- HEAD для UptimeRobot!
+    app.router.add_head("/", handle_root)
     app.router.add_post(f"/{BOT_TOKEN}", handle_webhook)
 
     runner = web.AppRunner(app)
@@ -84,5 +81,5 @@ async def main():
         await application.stop()
         await runner.cleanup()
 
-if name == "main":
+if __name__ == "__main__":
     asyncio.run(main())
