@@ -1,36 +1,20 @@
 import os
 import logging
-import threading
-from http.server import BaseHTTPRequestHandler, HTTPServer
+import asyncio
+from aiohttp import web
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
     MessageHandler, filters
 )
-from handlers import start, button, handle_message, export_notes
 from apscheduler.schedulers.background import BackgroundScheduler
+from handlers import start, button, handle_message, export_notes
 
-# Настройка логов
 logging.basicConfig(level=logging.INFO)
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 PORT = int(os.environ.get("PORT", 10000))
 
-# Заглушка для Render: HTTP-сервер на 8080
-class KeepAliveHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"Bot is alive")
-
-def run_keep_alive_server():
-    server = HTTPServer(('0.0.0.0', 8080), KeepAliveHandler)
-    server.serve_forever()
-
-# Стартуем заглушку в фоне
-threading.Thread(target=run_keep_alive_server, daemon=True).start()
-
-# Основной бот
 application = Application.builder().token(BOT_TOKEN).build()
 
 application.add_handler(CommandHandler("start", start))
@@ -42,7 +26,6 @@ application.add_handler(CommandHandler("export", export_notes))
 def scheduled_export():
     from telegram import Update
     from types import SimpleNamespace
-    import asyncio
 
     class DummyMessage:
         def __init__(self, user_id):
@@ -58,18 +41,41 @@ def scheduled_export():
     if not admin_ids:
         return
     dummy = DummyMessage(admin_ids[0])
-    fake_update = Update(update_id=0, message=dummy)
-    asyncio.run(export_notes(fake_update, application))
+    update = Update(update_id=0, message=dummy)
+    asyncio.run(export_notes(update, application))
 
-# Планировщик
 scheduler = BackgroundScheduler(timezone="Europe/Moscow")
 scheduler.add_job(scheduled_export, "cron", hour=20, minute=0)
 scheduler.start()
 
-# Запуск бота через webhook
-application.run_webhook(
-    listen="0.0.0.0",
-    port=PORT,
-    url_path=BOT_TOKEN,
-    webhook_url=f"{WEBHOOK_URL}/{BOT_TOKEN}"
-)
+# Aiohttp сервер
+async def handle_root(request):
+    return web.Response(text="Bot is alive")
+
+async def handle_webhook(request):
+    data = await request.json()
+    update = telegram.Update.de_json(data, application.bot)
+    await application.process_update(update)
+    return web.Response()
+
+async def main():
+    await application.initialize()
+    await application.bot.set_webhook(url=f"{WEBHOOK_URL}/{BOT_TOKEN}")
+    await application.start()
+
+    app = web.Application()
+    app.router.add_get("/", handle_root)
+    app.router.add_head("/", handle_root)  # ответ на HEAD-запрос
+    app.router.add_post(f"/{BOT_TOKEN}", handle_webhook)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", PORT)
+    await site.start()
+
+    logging.info("Bot and server started")
+    await application.updater.start_polling()
+    await application.updater.idle()
+
+if __name__ == "__main__":
+    asyncio.run(main())
