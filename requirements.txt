@@ -2,3 +2,5 @@ python-telegram-bot[webhooks]==20.6
 python-docx
 yadisk
 APScheduler==3.10.1
+aiohttp
+
