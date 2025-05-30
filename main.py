@@ -59,7 +59,7 @@ async def scheduled_export_real(application):
 
 # Планировщик
 scheduler = BackgroundScheduler(timezone="Europe/Moscow")
-scheduler.add_job(scheduled_export, "cron", hour=20, minute=0)
+scheduler.add_job(lambda: asyncio.create_task(scheduled_export_real(application)), "cron", hour=20, minute=0)
 scheduler.start()
 
 # HTTP-заглушка (GET /)
