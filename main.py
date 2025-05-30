@@ -2,9 +2,10 @@ import os
 import logging
 import asyncio
 from aiohttp import web
+from telegram import Update
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
-    MessageHandler, filters
+    MessageHandler, ContextTypes, filters
 )
 from apscheduler.schedulers.background import BackgroundScheduler
 from handlers import start, button, handle_message, export_notes
@@ -22,9 +23,8 @@ application.add_handler(CallbackQueryHandler(button))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 application.add_handler(CommandHandler("export", export_notes))
 
-# Ежедневный экспорт
+# Планировщик
 def scheduled_export():
-    from telegram import Update
     from types import SimpleNamespace
 
     class DummyMessage:
@@ -42,20 +42,23 @@ def scheduled_export():
         return
     dummy = DummyMessage(admin_ids[0])
     update = Update(update_id=0, message=dummy)
-    asyncio.run(export_notes(update, application))
+    asyncio.create_task(export_notes(update, application))
 
 scheduler = BackgroundScheduler(timezone="Europe/Moscow")
 scheduler.add_job(scheduled_export, "cron", hour=20, minute=0)
 scheduler.start()
 
-# Aiohttp сервер
+# aiohttp Webhook-сервер
 async def handle_root(request):
     return web.Response(text="Bot is alive")
 
 async def handle_webhook(request):
-    data = await request.json()
-    update = telegram.Update.de_json(data, application.bot)
-    await application.process_update(update)
+    try:
+        data = await request.json()
+        update = Update.de_json(data, application.bot)
+        await application.process_update(update)
+    except Exception as e:
+        logging.error(f"Webhook error: {e}")
     return web.Response()
 
 async def main():
@@ -65,7 +68,7 @@ async def main():
 
     app = web.Application()
     app.router.add_get("/", handle_root)
-    app.router.add_head("/", handle_root)  # ответ на HEAD-запрос
+    app.router.add_head("/", handle_root)
     app.router.add_post(f"/{BOT_TOKEN}", handle_webhook)
 
     runner = web.AppRunner(app)
@@ -73,9 +76,16 @@ async def main():
     site = web.TCPSite(runner, "0.0.0.0", PORT)
     await site.start()
 
-    logging.info("Bot and server started")
-    await application.updater.start_polling()
-    await application.updater.idle()
+    logging.info("Bot and aiohttp server started")
+
+    # Ждём пока не остановят вручную
+    try:
+        while True:
+            await asyncio.sleep(3600)
+    except (KeyboardInterrupt, SystemExit):
+        logging.info("Shutting down...")
+        await application.stop()
+        await runner.cleanup()
 
 if __name__ == "__main__":
     asyncio.run(main())
