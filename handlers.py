@@ -71,7 +71,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠ Не удалось распознать имена. Попробуйте снова.", reply_markup=get_keyboard())
     context.user_data["type"] = None
 
-async def export_notes(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def export_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from telegram.constants import ChatAction
     import yadisk
 
