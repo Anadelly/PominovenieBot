@@ -89,7 +89,7 @@ async def export_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with open(path, "rb") as f:
                 await update.message.reply_document(f)
             try:
-                token = os.getenv("YANDEX_TOKEN")
+                token = os.getenv("YANDEX_DISK_TOKEN")
                 if token:
                     y = yadisk.YaDisk(token=token)
                     y.upload(path, f"/pominovenie/{os.path.basename(path)}", overwrite=True)
