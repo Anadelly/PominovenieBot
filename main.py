@@ -1,7 +1,8 @@
 import os
 import logging
 import threading
-from http.server import BaseHTTPRequestHandler, HTTPServer
+import asyncio
+from aiohttp import web
 from telegram.ext import (
     Application, CommandHandler, CallbackQueryHandler,
     MessageHandler, filters
@@ -16,20 +17,6 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 PORT = int(os.environ.get("PORT", 10000))
 
-# Заглушка для Render: HTTP-сервер на 8080
-class KeepAliveHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"Bot is alive")
-
-def run_keep_alive_server():
-    server = HTTPServer(('0.0.0.0', 8080), KeepAliveHandler)
-    server.serve_forever()
-
-# Стартуем заглушку в фоне
-threading.Thread(target=run_keep_alive_server, daemon=True).start()
-
 # Основной бот
 application = Application.builder().token(BOT_TOKEN).build()
 
@@ -42,7 +29,6 @@ application.add_handler(CommandHandler("export", export_notes))
 def scheduled_export():
     from telegram import Update
     from types import SimpleNamespace
-    import asyncio
 
     class DummyMessage:
         def __init__(self, user_id):
@@ -66,10 +52,37 @@ scheduler = BackgroundScheduler(timezone="Europe/Moscow")
 scheduler.add_job(scheduled_export, "cron", hour=20, minute=0)
 scheduler.start()
 
-# Запуск бота через webhook
-application.run_webhook(
-    listen="0.0.0.0",
-    port=PORT,
-    url_path=BOT_TOKEN,
-    webhook_url=f"{WEBHOOK_URL}/{BOT_TOKEN}"
-)
+# HTTP-заглушка (GET /)
+async def handle_root(request):
+    return web.Response(text="✅ Bot is alive", status=200)
+
+async def handle_webhook(request):
+    try:
+        data = await request.json()
+        update = application.bot._extract_update(data)
+        await application.process_update(update)
+    except Exception as e:
+        logging.exception("Ошибка в вебхуке")
+    return web.Response()
+
+async def start_server():
+    app = web.Application()
+    app.router.add_get("/", handle_root)
+    app.router.add_head("/", handle_root)
+    app.router.add_post(f"/{BOT_TOKEN}", handle_webhook)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", PORT)
+    await site.start()
+
+    await application.initialize()
+    await application.bot.set_webhook(url=f"{WEBHOOK_URL}/{BOT_TOKEN}")
+    await application.start()
+
+    logging.info("✅ Бот запущен и готов к приёму вебхуков.")
+    while True:
+        await asyncio.sleep(3600)
+
+if __name__ == "__main__":
+    asyncio.run(start_server())
