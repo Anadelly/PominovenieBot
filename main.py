@@ -68,7 +68,6 @@ async def handle_webhook(request):
 async def start_server():
     app = web.Application()
     app.router.add_get("/", handle_root)
-    app.router.add_head("/", handle_root)
     app.router.add_post(f"/{BOT_TOKEN}", handle_webhook)
 
     runner = web.AppRunner(app)
