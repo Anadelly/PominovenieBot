@@ -4,9 +4,9 @@ import logging
 from datetime import datetime
 
 def upload_docx_to_yadisk(file_path):
-    token = os.environ.get("YANDEX_DISK_TOKEN")
+    token = os.environ.get("YANDEX_TOKEN")
     if not token:
-        logging.error("YANDEX_DISK_TOKEN не найден в переменных окружения")
+        logging.error("YANDEX_TOKEN не найден в переменных окружения")
         return False
     y = yadisk.YaDisk(token=token)
     if not y.check_token():
