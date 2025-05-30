@@ -8,7 +8,8 @@ from telegram.ext import (
     MessageHandler, filters
 )
 from telegram import Update
-from handlers import start, button, handle_message, export_notes
+from handlers import start, button, handle_message, export_notes, export_handler, upload_yadisk_handler
+
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # Настройка логов
