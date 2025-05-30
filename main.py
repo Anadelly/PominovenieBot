@@ -22,31 +22,39 @@ PORT = int(os.environ.get("PORT", 10000))
 application = Application.builder().token(BOT_TOKEN).build()
 
 application.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("export", export_notes))
+application.add_handler(CommandHandler("upload_yadisk", upload_yadisk_handler))
 application.add_handler(CallbackQueryHandler(button))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 application.add_handler(CommandHandler("export", export_notes))
 
 # Ежедневный экспорт
-def scheduled_export():
-    from telegram import Update
-    from types import SimpleNamespace
+from utils.yadisk_utils import upload_docx_to_yadisk
+from telegram.constants import ChatAction
+from export import generate_docx
+import datetime
+import shutil
 
-    class DummyMessage:
-        def __init__(self, user_id):
-            self.chat = self
-            self.id = user_id
-            self.from_user = SimpleNamespace(id=user_id)
-        async def reply_text(self, text, **kwargs):
-            logging.info(f"[SCHEDULED EXPORT] {text}")
-        async def send_action(self, *args, **kwargs): pass
-        async def reply_document(self, *args, **kwargs): pass
-
+async def scheduled_export_real(application):
     admin_ids = [int(i.strip()) for i in os.getenv("ADMIN_IDS", "").split(",") if i.strip()]
     if not admin_ids:
         return
-    dummy = DummyMessage(admin_ids[0])
-    fake_update = Update(update_id=0, message=dummy)
-    asyncio.run(export_notes(fake_update, application))
+
+    filename = f"zapiski_{datetime.datetime.now().strftime('%Y-%m-%d')}.docx"
+    file_path = os.path.join(".", filename)
+    generate_docx(file_path)
+
+    archived_path = os.path.join(".", f"арх_{filename}")
+    shutil.move(file_path, archived_path)
+
+    for admin_id in admin_ids:
+        try:
+            await application.bot.send_chat_action(chat_id=admin_id, action=ChatAction.UPLOAD_DOCUMENT)
+            await application.bot.send_document(chat_id=admin_id, document=open(archived_path, "rb"))
+        except Exception as e:
+            print(f"Ошибка при отправке файла админу {admin_id}: {e}")
+
+    upload_docx_to_yadisk(archived_path)
 
 # Планировщик
 scheduler = BackgroundScheduler(timezone="Europe/Moscow")
