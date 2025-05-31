@@ -10,7 +10,7 @@ from telegram.ext import (
 from telegram import Update
 from handlers import start, button, handle_message, export_handler, upload_yadisk_handler
 
-from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # Настройка логов
 logging.basicConfig(level=logging.INFO)
@@ -58,8 +58,8 @@ async def scheduled_export_real(application):
     upload_docx_to_yadisk(archived_path)
 
 # Планировщик
-scheduler = BackgroundScheduler(timezone="Europe/Moscow")
-scheduler.add_job(lambda: asyncio.create_task(scheduled_export_real(application)), "cron", hour=20, minute=0)
+scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
+scheduler.add_job(scheduled_export_real, "cron", hour=20, minute=0, args=[application])
 scheduler.start()
 
 # HTTP-заглушка (GET /)
