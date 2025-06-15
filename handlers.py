@@ -32,7 +32,7 @@ def append_to_docx(filepath, names, sender):
     doc.add_paragraph(f"{sender}:", style=None).runs[0].font.size = Pt(12)
 
     # Формируем абзац с тремя колонками
-    column_count = 4
+    column_count = 3
     columns = [[] for _ in range(column_count)]
 
     for i, name in enumerate(names):
