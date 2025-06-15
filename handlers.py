@@ -87,11 +87,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         await query.message.reply_text("Выберите действие:", reply_markup=get_keyboard())
     elif query.data == "restart":
-    context.user_data.clear()
-    await query.message.reply_text(
-        "🔄 Начнём заново! Пожалуйста, выберите действие:",
-        reply_markup=get_keyboard()
-    )    
+        context.user_data.clear()
+        await query.message.reply_text(
+            "🔄 Начнём заново! Пожалуйста, выберите действие:",
+            reply_markup=get_keyboard()
+        )    
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     note_type = context.user_data.get("type")
