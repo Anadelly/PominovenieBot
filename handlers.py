@@ -36,7 +36,20 @@ def get_keyboard():
     ])
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Выберите действие:", reply_markup=get_keyboard())
+    keyboard = [
+        [InlineKeyboardButton("О здравии", callback_data="ozdravii")],
+        [InlineKeyboardButton("Об упокоении", callback_data="oupokoenii")],
+        [InlineKeyboardButton("Пожертвовать", callback_data="donate")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(
+        "👋 Добро пожаловать! Этот бот помогает подать записки в православный храм свщмч. Сильвестра Омского г. Омска.\n"
+        "Вы можете выбрать тип записки и ввести имена. Также можно внести пожертвование.\n"
+        "Имена будут помянуты на ближайшей Литургии.\n"
+        "Выберите действие:",
+        reply_markup=reply_markup
+    )
+
 
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
