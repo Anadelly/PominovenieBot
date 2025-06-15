@@ -54,6 +54,7 @@ def get_keyboard():
         [InlineKeyboardButton("О здравии", callback_data="ozdravii")],
         [InlineKeyboardButton("Об упокоении", callback_data="oupokoenii")],
         [InlineKeyboardButton("Пожертвовать", callback_data="donate")]
+        [InlineKeyboardButton("🔁 Начать заново", callback_data="restart")]
     ])
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -77,7 +78,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     if query.data in ["ozdravii", "oupokoenii"]:
         context.user_data["type"] = query.data
-        await query.message.reply_text("Введите имена в родительном падеже: Марии, младенца Сергия")
+        await query.message.reply_text("Введите только имена в родительном падеже, без дополнительных знаков и символов: Марии, младенца Сергия")
     elif query.data == "donate":
         with open("static/qr-code.jpg", "rb") as qr:
             await query.message.reply_photo(
@@ -85,6 +86,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 caption="Введите сумму в приложении банка по ссылке https://qr.nspk.ru/BS2A003TTV82T23F844A34OJIMUM20JS?type=01&bank=100000000005&crc=7FF6 Спасибо!"
             )
         await query.message.reply_text("Выберите действие:", reply_markup=get_keyboard())
+    elif query.data == "restart":
+    context.user_data.clear()
+    await query.message.reply_text(
+        "🔄 Начнём заново! Пожалуйста, выберите действие:",
+        reply_markup=get_keyboard()
+    )    
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     note_type = context.user_data.get("type")
