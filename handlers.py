@@ -5,7 +5,8 @@ from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from docx import Document
-from docx.shared import Pt
+from docx.shared import Pt, Inches
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
 ZAPISKI_DIR = "zapiski"
 ZDRAVIE_FILE = os.path.join(ZAPISKI_DIR, "о_здравии.docx")
@@ -15,17 +16,37 @@ def ensure_dir():
     os.makedirs(ZAPISKI_DIR, exist_ok=True)
 
 def append_to_docx(filepath, names, sender):
+    from docx import Document
+
     if os.path.exists(filepath):
         doc = Document(filepath)
     else:
         doc = Document()
-        doc.add_table(rows=0, cols=1)
-    table = doc.tables[0]
-    for name in names:
-        row = table.add_row()
-        cell = row.cells[0]
-        para = cell.paragraphs[0]
-        para.add_run(f"{name} ({sender})").font.size = Pt(14)
+        # Заголовок
+        heading = "О здравии" if "здрав" in filepath else "Об упокоении"
+        p = doc.add_paragraph(heading)
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        p.runs[0].font.size = Pt(12)
+
+    # Добавим имя пользователя
+    doc.add_paragraph(f"{sender}:", style=None).runs[0].font.size = Pt(12)
+
+    # Формируем абзац с тремя колонками
+    column_count = 3
+    columns = [[] for _ in range(column_count)]
+
+    for i, name in enumerate(names):
+        columns[i % column_count].append(name)
+
+    max_len = max(len(col) for col in columns)
+    for i in range(max_len):
+        row = []
+        for col in columns:
+            row.append(col[i] if i < len(col) else "")
+        line = "     ".join(row)  # пробелы между колонками
+        p = doc.add_paragraph(line)
+        p.runs[0].font.size = Pt(12)
+
     doc.save(filepath)
 
 def get_keyboard():
