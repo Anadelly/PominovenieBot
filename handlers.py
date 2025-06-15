@@ -78,7 +78,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     if query.data in ["ozdravii", "oupokoenii"]:
         context.user_data["type"] = query.data
-        await query.message.reply_text("Введите только имена в родительном падеже, без дополнительных знаков и символов: Марии, младенца Сергия")
+        await query.message.reply_text("Введите только имена в родительном падеже через пробел, без дополнительных знаков и символов: Марии Сергия Анатолия")
     elif query.data == "donate":
         with open("static/qr-code.jpg", "rb") as qr:
             await query.message.reply_photo(
@@ -88,7 +88,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text("Выберите действие:", reply_markup=get_keyboard())
     elif query.data == "restart":
         context.user_data.clear()
-        await query.message.reply_text(
+        await query.edit_message_text(
             "🔄 Начнём заново! Пожалуйста, выберите действие:",
             reply_markup=get_keyboard()
         )    
