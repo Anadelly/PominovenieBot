@@ -53,7 +53,7 @@ def get_keyboard():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("О здравии", callback_data="ozdravii")],
         [InlineKeyboardButton("Об упокоении", callback_data="oupokoenii")],
-        [InlineKeyboardButton("Пожертвовать", callback_data="donate")]
+        [InlineKeyboardButton("Пожертвовать", callback_data="donate")],
         [InlineKeyboardButton("🔁 Начать заново", callback_data="restart")]
     ])
 
